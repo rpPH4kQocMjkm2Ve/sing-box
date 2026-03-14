@@ -5,9 +5,6 @@ on:
     branches: [main]
   workflow_dispatch:
 
-env:
-  IMAGE: ghcr.io/${{ github.repository_owner }}/sing-box
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -16,6 +13,10 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v6
+
+      - name: Set image name
+        id: img
+        run: echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/sing-box" >> "$GITHUB_OUTPUT"
 
       - name: Read version
         id: ver
@@ -38,13 +39,13 @@ jobs:
           VER=${{ steps.ver.outputs.tag }}
           VER=${VER#v}
           podman build --platform linux/amd64 \
-            -t ${{ env.IMAGE }}:${VER} \
-            -t ${{ env.IMAGE }}:latest \
+            -t ${{ steps.img.outputs.image }}:${VER} \
+            -t ${{ steps.img.outputs.image }}:latest \
             .build/src
 
       - name: Push
         run: |
           VER=${{ steps.ver.outputs.tag }}
           VER=${VER#v}
-          podman push ${{ env.IMAGE }}:${VER}
-          podman push ${{ env.IMAGE }}:latest
+          podman push ${{ steps.img.outputs.image }}:${VER}
+          podman push ${{ steps.img.outputs.image }}:latest
