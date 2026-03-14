@@ -1,0 +1,50 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/sing-box
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Read version
+        id: ver
+        run: |
+          tag=$(cat VERSION)
+          [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::Invalid VERSION: ${tag}"; exit 1; }
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+
+      - name: Clone upstream
+        run: |
+          git clone --branch ${{ steps.ver.outputs.tag }} --depth 1 \
+            https://github.com/SagerNet/sing-box.git .build/src
+          cp Dockerfile .build/src/Dockerfile
+
+      - name: Login to GHCR
+        run: echo ${{ secrets.GITHUB_TOKEN }} | podman login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build
+        run: |
+          VER=${{ steps.ver.outputs.tag }}
+          VER=${VER#v}
+          podman build --platform linux/amd64 \
+            -t ${{ env.IMAGE }}:${VER} \
+            -t ${{ env.IMAGE }}:latest \
+            .build/src
+
+      - name: Push
+        run: |
+          VER=${{ steps.ver.outputs.tag }}
+          VER=${VER#v}
+          podman push ${{ env.IMAGE }}:${VER}
+          podman push ${{ env.IMAGE }}:latest
