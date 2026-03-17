@@ -1,9 +1,9 @@
-UPSTREAM  = https://github.com/SagerNet/sing-box.git
-REGISTRY  = ghcr.io
-IMAGE     = $(REGISTRY)/rpph4kqocmjkm2ve/sing-box
-VERSION  ?=
-PLATFORM ?= linux/amd64
-BUILDDIR  = .build/src
+UPSTREAM  := https://github.com/SagerNet/sing-box.git
+REGISTRY  := ghcr.io
+IMAGE     := $(REGISTRY)/rpph4kqocmjkm2ve/sing-box
+VERSION   ?=
+PLATFORM  ?= linux/amd64
+BUILDDIR  := .build/src
 
 TAG = $(IMAGE):$(patsubst v%,%,$(VERSION))
 
