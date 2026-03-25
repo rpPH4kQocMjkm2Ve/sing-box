@@ -25,6 +25,6 @@ clean:
 
 check-upstream:
 	@git ls-remote --tags --sort=-v:refname $(UPSTREAM) 'v*' \
-		| head -5 \
+		| head -20 \
 		| awk '{print $$2}' \
 		| sed 's|refs/tags/||'
