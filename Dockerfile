@@ -13,7 +13,7 @@ RUN set -ex \
     && export COMMIT=$(git rev-parse --short HEAD) \
     && export VERSION=$(go run ./cmd/internal/read_tag) \
     && go build -v -trimpath -tags \
-        "with_gvisor,with_wireguard,with_utls,with_ccm,with_ocm,badlinkname,tfogo_checklinkname0" \
+        "with_gvisor,with_wireguard,with_utls,with_quic,with_ccm,with_ocm,badlinkname,tfogo_checklinkname0" \
         -o /go/bin/sing-box \
         -ldflags "-X \"github.com/sagernet/sing-box/constant.Version=$VERSION\" -X 'internal/godebug.defaultGODEBUG=multipathtcp=0' -s -w -buildid= -checklinkname=0" \
         ./cmd/sing-box
