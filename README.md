@@ -1,7 +1,7 @@
 # sing-box container image
 
 [![Build](https://github.com/rpPH4kQocMjkm2Ve/sing-box/actions/workflows/build.yml/badge.svg)](https://github.com/rpPH4kQocMjkm2Ve/sing-box/actions/workflows/build.yml)
-![Version](https://img.shields.io/badge/version-1.13.4-blue)
+![Version](https://img.shields.io/badge/version-1.13.5-blue)
 ![Platform](https://img.shields.io/badge/platform-linux%2Famd64-lightgrey)
 ![License](https://img.shields.io/github/license/rpPH4kQocMjkm2Ve/sing-box)
 
