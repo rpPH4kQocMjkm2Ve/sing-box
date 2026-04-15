@@ -9,8 +9,8 @@ OUTPUT_DEFAULT="./output"
 UPSTREAM_SING_BOX="https://github.com/SagerNet/sing-box.git"
 UPSTREAM_CRONET_GO="https://github.com/sagernet/cronet-go.git"
 
-ARM64_TAGS="with_gvisor,with_naive_outbound,with_quic,with_grpc,with_musl,badlinkname,tfogo_checklinkname0"
-AMD64_TAGS="with_gvisor,with_naive_outbound,with_quic,with_grpc,with_purego,badlinkname,tfogo_checklinkname0"
+ARM64_TAGS="with_gvisor,with_utls,with_naive_outbound,with_quic,with_grpc,with_musl,badlinkname,tfogo_checklinkname0"
+AMD64_TAGS="with_gvisor,with_utls,with_naive_outbound,with_quic,with_grpc,with_purego,badlinkname,tfogo_checklinkname0"
 LDFLAGS="-s -w -checklinkname=0"
 
 show_help() {
