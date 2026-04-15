@@ -10,7 +10,7 @@ UPSTREAM_SING_BOX="https://github.com/SagerNet/sing-box.git"
 UPSTREAM_CRONET_GO="https://github.com/sagernet/cronet-go.git"
 
 ARM64_TAGS="with_gvisor,with_utls,with_naive_outbound,with_quic,with_grpc,with_musl,badlinkname,tfogo_checklinkname0"
-AMD64_TAGS="with_gvisor,with_utls,with_naive_outbound,with_quic,with_grpc,with_purego,badlinkname,tfogo_checklinkname0"
+AMD64_TAGS="with_gvisor,with_utls,with_naive_outbound,with_quic,with_grpc,badlinkname,tfogo_checklinkname0"
 LDFLAGS="-s -w -checklinkname=0"
 
 show_help() {
@@ -283,7 +283,7 @@ cmd_build_arm64() {
     local output_path="$4"
     local version="$5"
 
-    echo "Building arm64 with CGO (requires libcronet.so)..."
+    echo "Building arm64 with CGO..."
 
     check_arm64_deps || exit 1
 
@@ -315,12 +315,7 @@ cmd_build_arm64() {
         -ldflags "-s -w -checklinkname=0 -X 'github.com/sagernet/sing-box/constant.Version=v$version'" \
         ./cmd/sing-box
 
-    echo "Extracting libcronet.so..."
-    cd "$cronet_go_path" || exit 1
-    CGO_ENABLED=0 go run ./cmd/build-naive extract-lib --target linux/arm64 -n libcronet.so -o dist
-
     cp "$sing_box_path/dist/sing-box" "$output_path/sing-box_arm64"
-    cp "$cronet_go_path/dist/libcronet.so" "$output_path/libcronet_arm64.so"
 }
 
 cmd_build_amd64() {
@@ -329,24 +324,37 @@ cmd_build_amd64() {
     local output_path="$3"
     local version="$4"
 
+    echo "Building amd64 with CGO..."
+
     local original_dir
     original_dir="$(pwd)"
     cronet_go_path="$(cd "$(dirname "$cronet_go_path")" && pwd)/$(basename "$cronet_go_path")"
     sing_box_path="$(cd "$(dirname "$sing_box_path")" && pwd)/$(basename "$sing_box_path")"
 
-    echo "Building amd64 with purego..."
+    cd "$cronet_go_path" || exit 1
+
+    if [[ -d "naiveproxy/src/third_party/llvm-build/Release+Asserts/bin/clang" ]]; then
+        echo "Toolchain already present."
+    else
+        echo "Downloading Chromium toolchain..."
+        go run ./cmd/build-naive --target=linux/amd64 download-toolchain
+    fi
+
+    echo "Setting Chromium toolchain environment..."
+    while IFS='=' read -r key value; do
+        [[ -z "$key" || "$key" =~ ^# ]] && continue
+        export "$key=$value"
+    done < <(go run ./cmd/build-naive --target=linux/amd64 env)
 
     cd "$sing_box_path" || exit 1
-
-    go build -tags "$AMD64_TAGS" -v -trimpath \
-        -ldflags "$LDFLAGS -X 'github.com/sagernet/sing-box/constant.Version=v$version'" \
-        -o "$output_path/sing-box_amd64" ./cmd/sing-box
-
-    echo "Extracting libcronet.so..."
-    cd "$cronet_go_path" || exit 1
     mkdir -p dist
-    CGO_ENABLED=0 go run ./cmd/build-naive extract-lib --target linux/amd64 -n libcronet.so -o dist
-    cp "$cronet_go_path/dist/libcronet.so" "$output_path/libcronet_amd64.so"
+
+    CGO_ENABLED=1 GOOS=linux GOARCH=amd64 \
+        go build -v -trimpath -buildvcs=false -o dist/sing-box -tags "$AMD64_TAGS" \
+        -ldflags "-s -w -checklinkname=0 -X 'github.com/sagernet/sing-box/constant.Version=v$version'" \
+        ./cmd/sing-box
+
+    cp "$sing_box_path/dist/sing-box" "$output_path/sing-box_amd64"
 }
 
 main() {
