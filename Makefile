@@ -6,7 +6,19 @@ PLATFORM  ?= linux/amd64
 BUILDDIR  := .build/src
 TAG       := $(IMAGE):$(patsubst v%,%,$(VERSION))
 
-.PHONY: build push clean check-upstream
+.PHONY: build push clean check-upstream test
+
+UNIT_TESTS = \
+	tests/test_args.sh \
+	tests/test_clone.sh \
+	tests/test_build.sh
+
+test:
+	@for t in $(UNIT_TESTS); do \
+		echo ""; \
+		echo "━━━ $$t ━━━"; \
+		bash "$$t" || exit 1; \
+	done
 
 build: clean
 	git clone --branch $(VERSION) --depth 1 $(UPSTREAM) $(BUILDDIR)
