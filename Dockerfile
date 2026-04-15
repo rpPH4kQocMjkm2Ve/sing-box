@@ -19,7 +19,7 @@ RUN set -ex \
     && export CGO_CFLAGS="-I/usr/include" \
     && export CGO_LDFLAGS="-L/usr/lib -fuse-ld=lld -static" \
     && go build -v -trimpath -tags \
-        "with_wireguard,with_naive_outbound,with_musl,with_quic,badlinkname,tfogo_checklinkname0" \
+        "with_gvisor,with_wireguard,with_naive_outbound,with_musl,with_quic,badlinkname,tfogo_checklinkname0" \
         -o /go/bin/sing-box \
         -ldflags "-linkmode=external -extld=clang -extldflags='-static' -X \"github.com/sagernet/sing-box/constant.Version=$VERSION\" -X 'internal/godebug.defaultGODEBUG=multipathtcp=0' -s -w -buildid= -checklinkname=0" \
         ./cmd/sing-box
