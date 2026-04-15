@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    paths:
+      - 'scripts/build.sh'
+      - 'tests/*.sh'
+      - 'Makefile'
+  pull_request:
+    paths:
+      - 'scripts/build.sh'
+      - 'tests/*.sh'
+      - 'Makefile'
+
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: shellcheck -s bash -e SC1090,SC1091,SC2034 scripts/build.sh
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: |
+          for t in \
+            tests/test_args.sh \
+            tests/test_clone.sh \
+            tests/test_build.sh; do
+            echo "━━━ $t ━━━"
+            bash "$t" || exit 1
+          done
