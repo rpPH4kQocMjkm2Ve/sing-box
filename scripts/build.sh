@@ -132,7 +132,8 @@ cmd_clone_cronet_go() {
     if [[ -f ".github/CRONET_GO_VERSION" ]]; then
         version=$(cat ".github/CRONET_GO_VERSION")
     else
-        local cronet_parent="$(dirname "$path")"
+        local cronet_parent
+        cronet_parent="$(dirname "$path")"
         local sing_box_path="${cronet_parent}/sing-box"
         version=$(parse_cronet_version "$sing_box_path" 2>/dev/null) || {
             echo "Error: CRONET_GO_VERSION not found. Run: $(basename "$0") clone sing-box first"
@@ -171,7 +172,7 @@ cmd_clone_toolchain() {
     version=$(parse_cronet_version "$path/../sing-box")
 
     echo "Downloading Chromium toolchain for cronet-go $version..."
-    cd "$path"
+    cd "$path" || exit 1
     go run ./cmd/build-naive --target=linux/arm64 --libc=musl download-toolchain
     echo "Done."
 }
@@ -213,7 +214,8 @@ cmd_build() {
         esac
     done
 
-    local original_dir="$(pwd)"
+    local original_dir
+    original_dir="$(pwd)"
     if [[ "$output_path" != /* ]]; then
         output_path="$original_dir/$output_path"
     fi
@@ -285,11 +287,12 @@ cmd_build_arm64() {
 
     check_arm64_deps || exit 1
 
-    local original_dir="$(pwd)"
+    local original_dir
+    original_dir="$(pwd)"
     cronet_go_path="$(cd "$(dirname "$cronet_go_path")" && pwd)/$(basename "$cronet_go_path")"
     sing_box_path="$(cd "$(dirname "$sing_box_path")" && pwd)/$(basename "$sing_box_path")"
 
-    cd "$cronet_go_path"
+    cd "$cronet_go_path" || exit 1
 
     if [[ -d "naiveproxy/src/third_party/llvm-build/Release+Asserts/bin/clang" ]]; then
         echo "Toolchain already present."
@@ -304,7 +307,7 @@ cmd_build_arm64() {
         export "$key=$value"
     done < <(go run ./cmd/build-naive --target=linux/arm64 --libc=musl env)
 
-    cd "$sing_box_path"
+    cd "$sing_box_path" || exit 1
     mkdir -p dist
 
     CGO_ENABLED=1 GOOS=linux GOARCH=arm64 \
@@ -313,7 +316,7 @@ cmd_build_arm64() {
         ./cmd/sing-box
 
     echo "Extracting libcronet.so..."
-    cd "$cronet_go_path"
+    cd "$cronet_go_path" || exit 1
     CGO_ENABLED=0 go run ./cmd/build-naive extract-lib --target linux/arm64 -n libcronet.so -o dist
 
     cp "$sing_box_path/dist/sing-box" "$output_path/sing-box_arm64"
@@ -326,20 +329,21 @@ cmd_build_amd64() {
     local output_path="$3"
     local version="$4"
 
-    local original_dir="$(pwd)"
+    local original_dir
+    original_dir="$(pwd)"
     cronet_go_path="$(cd "$(dirname "$cronet_go_path")" && pwd)/$(basename "$cronet_go_path")"
     sing_box_path="$(cd "$(dirname "$sing_box_path")" && pwd)/$(basename "$sing_box_path")"
 
     echo "Building amd64 with purego..."
 
-    cd "$sing_box_path"
+    cd "$sing_box_path" || exit 1
 
     go build -tags "$AMD64_TAGS" -v -trimpath \
         -ldflags "$LDFLAGS -X 'github.com/sagernet/sing-box/constant.Version=v$version'" \
         -o "$output_path/sing-box_amd64" ./cmd/sing-box
 
     echo "Extracting libcronet.so..."
-    cd "$cronet_go_path"
+    cd "$cronet_go_path" || exit 1
     mkdir -p dist
     CGO_ENABLED=0 go run ./cmd/build-naive extract-lib --target linux/amd64 -n libcronet.so -o dist
     cp "$cronet_go_path/dist/libcronet.so" "$output_path/libcronet_amd64.so"
