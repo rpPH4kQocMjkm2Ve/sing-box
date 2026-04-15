@@ -24,7 +24,6 @@ The following build tags are enabled in this image:
 |-----|-------------|
 | `with_gvisor` | gVisor userspace network stack (Tun inbound, WireGuard outbound) |
 | `with_wireguard` | WireGuard outbound support |
-| `with_utls` | uTLS fingerprinting for TLS outbound |
 | `with_naive_outbound` | NaiveProxy outbound support |
 | `with_musl` | (arm64) Static musl build for alpine compatibility |
 | `with_quic` | QUIC support (QUIC/HTTP3 DNS, Naive inbound, Hysteria) |
@@ -39,7 +38,7 @@ The following build tags are enabled in this image:
 | `-checklinkname=0` | Disables Go 1.23+ linker check on `go:linkname` usage (required together with the `badlinkname` build tag) |
 | `-s -w` | Strip debug symbols |
 
-> **Note:** This build does **not** include every default upstream tag. Tags like `with_dhcp`, `with_clash_api`, `with_acme`, `with_tailscale`, `with_ccm`, and `with_ocm` are omitted to keep the image minimal. See the [upstream documentation](https://sing-box.sagernet.org/installation/build-from-source/) for the full list.
+> **Note:** This build does **not** include every default upstream tag. Tags like `with_dhcp`, `with_utls`, `with_clash_api`, `with_acme`, `with_tailscale`, `with_ccm`, and `with_ocm` are omitted to keep the image minimal. See the [upstream documentation](https://sing-box.sagernet.org/installation/build-from-source/) for the full list.
 
 ### Base image
 
