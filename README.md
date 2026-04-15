@@ -2,7 +2,7 @@
 
 [![Build](https://github.com/rpPH4kQocMjkm2Ve/sing-box/actions/workflows/build.yml/badge.svg)](https://github.com/rpPH4kQocMjkm2Ve/sing-box/actions/workflows/build.yml)
 ![Version](https://img.shields.io/badge/version-1.13.8-blue)
-![Platform](https://img.shields.io/badge/platform-linux%2Famd64-lightgrey)
+![Platform](https://img.shields.io/badge/platform-linux%2Famd64%2Clinux%2Farm64-lightgrey)
 ![License](https://img.shields.io/github/license/rpPH4kQocMjkm2Ve/sing-box)
 
 OCI image build of [sing-box](https://github.com/SagerNet/sing-box) with a curated set of build tags, published to GitHub Container Registry.
@@ -25,8 +25,9 @@ The following build tags are enabled in this image:
 | `with_gvisor` | gVisor userspace network stack (Tun inbound, WireGuard outbound) |
 | `with_wireguard` | WireGuard outbound support |
 | `with_utls` | uTLS fingerprinting for TLS outbound |
-| `with_ccm` | Claude Code Multiplexer service support |
-| `with_ocm` | OpenAI Codex Multiplexer service support |
+| `with_naive_outbound` | NaiveProxy outbound support |
+| `with_musl` | (arm64) Static musl build for alpine compatibility |
+| `with_quic` | QUIC support (QUIC/HTTP3 DNS, Naive inbound, Hysteria) |
 | `badlinkname` | Enable `go:linkname` access to internal stdlib functions (required for kTLS and raw TLS record manipulation) |
 | `tfogo_checklinkname0` | Companion to `badlinkname`; signals the build uses `-checklinkname=0` to bypass Go 1.23+ linker restrictions |
 
@@ -36,8 +37,9 @@ The following build tags are enabled in this image:
 |------|-------------|
 | `-X 'internal/godebug.defaultGODEBUG=multipathtcp=0'` | Go 1.24 enabled MPTCP for listeners by default; this disables it because sing-box has its own MPTCP control (`tcp_multi_path` option) |
 | `-checklinkname=0` | Disables Go 1.23+ linker check on `go:linkname` usage (required together with the `badlinkname` build tag) |
+| `-s -w` | Strip debug symbols |
 
-> **Note:** This build does **not** include every default upstream tag. Tags like `with_quic`, `with_dhcp`, `with_clash_api`, `with_acme`, `with_tailscale`, and `with_naive_outbound` are omitted to keep the image minimal. See the [upstream documentation](https://sing-box.sagernet.org/installation/build-from-source/) for the full list.
+> **Note:** This build does **not** include every default upstream tag. Tags like `with_dhcp`, `with_clash_api`, `with_acme`, `with_tailscale`, `with_ccm`, and `with_ocm` are omitted to keep the image minimal. See the [upstream documentation](https://sing-box.sagernet.org/installation/build-from-source/) for the full list.
 
 ### Base image
 
@@ -111,7 +113,7 @@ Requires `go`, `git`, `dpkg`, `dpkg-deb` (for arm64).
 ./scripts/build.sh build --arch arm64
 ```
 
-Output: `output/sing-box_{amd64,arm64}` + `output/libcronet_{amd64,arm64}.so`.
+Output: `output/sing-box_{amd64,arm64}`.
 
 ## Repository structure
 
