@@ -70,6 +70,10 @@ echo 'v1.13.2' > VERSION
 
 ## Local build
 
+Two options:
+
+### Container (OCI image)
+
 Requires `podman` (or a compatible runtime) and `make`.
 
 ```bash
@@ -92,13 +96,31 @@ Override the target platform:
 make build VERSION=v1.13.2 PLATFORM=linux/arm64
 ```
 
+### Binaries (host system)
+
+Requires `go`, `git`, `dpkg`, `dpkg-deb` (for arm64).
+
+```bash
+# Clone repositories
+./scripts/build.sh clone sing-box
+./scripts/build.sh clone cronet-go
+./scripts/build.sh clone toolchain
+
+# Build
+./scripts/build.sh build --arch amd64
+./scripts/build.sh build --arch arm64
+```
+
+Output: `output/sing-box_{amd64,arm64}` + `output/libcronet_{amd64,arm64}.so`.
+
 ## Repository structure
 
 ```
 .
 ├── .github/workflows/build.yml   # CI pipeline
 ├── Dockerfile                    # Multi-stage build
-├── Makefile                      # Local build helpers
+├── Makefile                      # Local build helpers (container)
+├── scripts/build.sh              # Build binaries for host system
 ├── VERSION                       # Current target upstream version
 └── README.md
 ```
