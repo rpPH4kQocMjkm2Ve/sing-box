@@ -5,18 +5,25 @@ WORKDIR /go/src/github.com/sagernet/sing-box
 ARG TARGETOS TARGETARCH
 ARG GOPROXY=""
 ENV GOPROXY ${GOPROXY}
-ENV CGO_ENABLED=0
+
+ENV CGO_ENABLED=1
 ENV GOOS=$TARGETOS
 ENV GOARCH=$TARGETARCH
+
 RUN set -ex \
-    && apk add git build-base \
+    && apk add git build-base curl clang lld musl-dev \
     && export COMMIT=$(git rev-parse --short HEAD) \
     && export VERSION=$(go run ./cmd/internal/read_tag) \
+    && export CC=clang \
+    && export CXX=clang++ \
+    && export CGO_CFLAGS="-I/usr/include" \
+    && export CGO_LDFLAGS="-L/usr/lib -fuse-ld=lld -static" \
     && go build -v -trimpath -tags \
-        "with_gvisor,with_wireguard,with_naive_outbound,with_quic,with_ccm,with_ocm,badlinkname,tfogo_checklinkname0" \
+        "with_gvisor,with_wireguard,with_naive_outbound,with_musl,with_quic,with_ccm,with_ocm,badlinkname,tfogo_checklinkname0" \
         -o /go/bin/sing-box \
-        -ldflags "-X \"github.com/sagernet/sing-box/constant.Version=$VERSION\" -X 'internal/godebug.defaultGODEBUG=multipathtcp=0' -s -w -buildid= -checklinkname=0" \
+        -ldflags "-linkmode=external -extld=clang -extldflags='-static' -X \"github.com/sagernet/sing-box/constant.Version=$VERSION\" -X 'internal/godebug.defaultGODEBUG=multipathtcp=0' -s -w -buildid= -checklinkname=0" \
         ./cmd/sing-box
+
 FROM --platform=$TARGETPLATFORM alpine AS dist
 LABEL maintainer="nekohasekai <contact-git@sekai.icu>"
 RUN set -ex \
