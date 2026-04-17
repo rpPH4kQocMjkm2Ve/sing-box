@@ -21,7 +21,11 @@ jobs:
 
       - name: Set image name
         id: img
-        run: echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/sing-box" >> "$GITHUB_OUTPUT"
+        run: echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/$(cat OBFS_NAME)" >> "$GITHUB_OUTPUT"
+
+      - name: Read OBFS_NAME
+        id: obfs
+        run: echo "name=$(cat OBFS_NAME)" >> "$GITHUB_OUTPUT"
 
       - name: Read version
         id: ver
@@ -35,6 +39,7 @@ jobs:
           git clone --branch ${{ steps.ver.outputs.tag }} --depth 1 \
             https://github.com/SagerNet/sing-box.git .build/src
           cp Dockerfile .build/src/Dockerfile
+          cp OBFS_NAME .build/src/OBFS_NAME
 
       - name: Login to GHCR
         run: echo ${{ secrets.GITHUB_TOKEN }} | podman login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -44,6 +49,7 @@ jobs:
           VER=${{ steps.ver.outputs.tag }}
           VER=${VER#v}
           podman build --platform linux/amd64 \
+            --build-arg OBFS_NAME=${{ steps.obfs.outputs.name }} \
             -t ${{ steps.img.outputs.image }}:${VER} \
             -t ${{ steps.img.outputs.image }}:latest \
             .build/src

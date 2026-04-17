@@ -12,9 +12,11 @@ The resulting image is consumed by the infrastructure repository [fkzys/infra](h
 ## Image
 
 ```
-ghcr.io/<owner>/sing-box:<version>
-ghcr.io/<owner>/sing-box:latest
+ghcr.io/<owner>/<OBFS_NAME>:<version>
+ghcr.io/<owner>/<OBFS_NAME>:latest
 ```
+
+Where `OBFS_NAME` is stored in `OBFS_NAME` file (generated once). The binary inside the container is symlinked from `bin` to `<OBFS_NAME>`.
 
 ### Build tags
 
