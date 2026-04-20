@@ -98,7 +98,7 @@ update_sing_box() {
         echo "sing-box already at v$target_version"
     fi
 
-    cd - > /dev/null
+    cd - > /dev/null || return 1
 }
 
 update_cronet_go() {
@@ -119,7 +119,7 @@ update_cronet_go() {
         echo "cronet-go already at $target_version"
     fi
 
-    cd - > /dev/null
+    cd - > /dev/null || return 1
 }
 
 cmd_clone_sing_box() {
