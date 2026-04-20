@@ -55,12 +55,13 @@ Commands:
     clone sing-box [--sing-box <path>]       Clone sing-box repository
     clone cronet-go [--cronet-go <path>]    Clone cronet-go repository
     clone toolchain [--toolchain <path>]   Download Chromium toolchain
+    pull [--all|sing-box|cronet-go]       Pull latest version
     build --arch <arm64|amd64> [options]    Build sing-box binary
 
 Examples:
     $(basename "$0") clone sing-box
     $(basename "$0") build --arch arm64
-    $(basename "$0") build --arch amd64
+    $(basename "$0") build --arch amd64 --no-pull
 EOF
 }
 
@@ -68,6 +69,9 @@ EOF
 cmd_clone_sing_box() { echo "CALL: cmd_clone_sing_box"; }
 cmd_clone_cronet_go() { echo "CALL: cmd_clone_cronet_go"; }
 cmd_clone_toolchain() { echo "CALL: cmd_clone_toolchain"; }
+cmd_pull() { echo "CALL: cmd_pull"; }
+update_sing_box() { echo "CALL: update_sing_box"; }
+update_cronet_go() { echo "CALL: update_cronet_go"; }
 cmd_build() { echo "CALL: cmd_build"; }
 cmd_build_arm64() { echo "CALL: cmd_build_arm64"; }
 cmd_build_amd64() { echo "CALL: cmd_build_amd64"; }
@@ -80,7 +84,7 @@ require_cmd() {
 }
 
 parse_version() { echo "v1.13.8"; }
-parse_cronet_version() { echo "v1.13.8"; }
+parse_cronet_version() { echo "abc123"; }
 
 main() {
     if [[ $# -eq 0 ]]; then
@@ -109,9 +113,28 @@ main() {
                     ;;
             esac
             ;;
+        pull)
+            shift
+            local pull_target="all"
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    --sing-box|sing-box|--all|all|--cronet-go|cronet-go)
+                        pull_target="$1"
+                        shift
+                        ;;
+                    *)
+                        echo "Unknown option: $1" >&2
+                        show_help
+                        exit 1
+                        ;;
+                esac
+            done
+            cmd_pull "$pull_target"
+            ;;
         build)
             shift
             local arch=""
+            local no_pull=0
             local sing_box_path="./src/sing-box"
             local cronet_go_path="./src/cronet-go"
             local toolchain_path="./src/cronet-go"
@@ -124,6 +147,7 @@ main() {
                     --cronet-go) cronet_go_path="$2"; shift 2; ;;
                     --toolchain) toolchain_path="$2"; shift 2; ;;
                     --output) output_path="$2"; shift 2; ;;
+                    --no-pull) no_pull=1; shift; ;;
                     *)
                         echo "Unknown option: $1" >&2
                         show_help
@@ -141,6 +165,8 @@ main() {
                 echo "Error: --arch must be arm64 or amd64" >&2
                 exit 1
             fi
+
+            cmd_build "no_pull=$no_pull"
 
             if [[ "$arch" == "arm64" ]]; then
                 cmd_build_arm64 "$sing_box_path" "$cronet_go_path" "$toolchain_path" "$output_path" "v1.13.8"
@@ -167,6 +193,32 @@ main "$@"
 PATCH
 
 chmod +x "$PATCHED_SCRIPT"
+
+# ── Pull commands ─────────────────────────────────────
+
+section "Pull commands"
+
+run_cmd bash "$PATCHED_SCRIPT" pull
+assert_eq "pull → calls cmd_pull" "0" "$_rc"
+assert_contains "calls cmd_pull" "CALL: cmd_pull" "$_out"
+
+run_cmd bash "$PATCHED_SCRIPT" pull --all
+assert_eq "pull --all → calls cmd_pull" "0" "$_rc"
+
+run_cmd bash "$PATCHED_SCRIPT" pull --sing-box
+assert_eq "pull --sing-box → calls cmd_pull" "0" "$_rc"
+
+run_cmd bash "$PATCHED_SCRIPT" pull --cronet-go
+assert_eq "pull --cronet-go → calls cmd_pull" "0" "$_rc"
+
+run_cmd bash "$PATCHED_SCRIPT" pull sing-box
+assert_eq "pull sing-box (no --) → calls cmd_pull" "0" "$_rc"
+
+run_cmd bash "$PATCHED_SCRIPT" pull cronet-go
+assert_eq "pull cronet-go (no --) → calls cmd_pull" "0" "$_rc"
+
+run_cmd bash "$PATCHED_SCRIPT" pull all
+assert_eq "pull all (no --) → calls cmd_pull" "0" "$_rc"
 
 # ── Clone commands ─────────────────────────────────────
 
@@ -212,6 +264,18 @@ section "Build output path"
 run_cmd bash "$PATCHED_SCRIPT" build --arch amd64 --output relative/path
 assert_eq "relative output → made absolute" "0" "$_rc"
 assert_contains "output is absolute" "OUTPUT_PATH=/" "$_out"
+
+# ── --no-pull flag ─────────────────────────────────────
+
+section "--no-pull flag"
+
+run_cmd bash "$PATCHED_SCRIPT" build --arch amd64
+assert_eq "build without --no-pull → calls cmd_build" "0" "$_rc"
+assert_contains "calls cmd_build" "CALL: cmd_build" "$_out"
+
+run_cmd bash "$PATCHED_SCRIPT" build --arch amd64 --no-pull
+assert_eq "build with --no-pull → calls cmd_build" "0" "$_rc"
+assert_contains "calls cmd_build" "CALL: cmd_build" "$_out"
 
 # ── Summary ────────────────────────────────────────────
 

@@ -43,6 +43,14 @@ assert_rc() {
     else fail "$desc (expected rc=$expected, got rc=$rc)"; fi
 }
 
+# ── Pull command ─────────────────────────────────────────────
+
+section "Pull command"
+
+run_cmd bash "$SCRIPT" pull
+assert_eq "pull → exit 1 (no VERSION)" "1" "$_rc"
+assert_contains "VERSION file not found" "VERSION file not found" "$_out"
+
 # ── Help & version ───────────────────────────────────────────
 
 section "Help & version"
@@ -56,6 +64,7 @@ assert_eq "--help → exit 0" "0" "$_rc"
 assert_contains "help shows Usage" "Usage:" "$_out"
 assert_contains "help shows clone" "clone" "$_out"
 assert_contains "help shows build" "build" "$_out"
+assert_contains "help shows pull" "pull" "$_out"
 assert_contains "help shows --arch" "--arch" "$_out"
 
 run_cmd bash "$SCRIPT" -h
@@ -105,6 +114,16 @@ assert_contains "attempts to clone" "not found" "$_out"
 run_cmd bash "$SCRIPT" build --arch amd64
 assert_eq "valid arch amd64 → exit 1 (no repo)" "1" "$_rc"
 assert_contains "attempts to clone" "not found" "$_out"
+
+section "Build --help"
+
+run_cmd bash "$SCRIPT" build --help
+assert_eq "build --help → exit 0" "0" "$_rc"
+assert_contains "help shows Usage" "Usage:" "$_out"
+
+run_cmd bash "$SCRIPT" build -h
+assert_eq "build -h → exit 0" "0" "$_rc"
+assert_contains "help shows Usage" "Usage:" "$_out"
 
 # ── Unknown clone target ───────────────────────────────────
 

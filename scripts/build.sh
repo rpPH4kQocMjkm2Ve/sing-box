@@ -18,9 +18,10 @@ show_help() {
 Usage: $(basename "$0") <command> [options]
 
 Commands:
-    clone sing-box [--sing-box <path>]       Clone sing-box repository
+    clone sing-box [--sing-box <path>]      Clone sing-box repository
     clone cronet-go [--cronet-go <path>]    Clone cronet-go repository
     clone toolchain [--toolchain <path>]    Download Chromium toolchain
+    pull [--all|sing-box|cronet-go]         Pull latest version
     build --arch <arm64|amd64> [options]    Build sing-box binary
 
 Clone options:
@@ -28,18 +29,27 @@ Clone options:
     --cronet-go <path>   Path for cronet-go (default: $CRONET_GO_DEFAULT)
     --toolchain <path>   Path for toolchain (default: $TOOLCHAIN_DEFAULT)
 
+Pull options:
+    --all          Pull both repositories (default)
+    --sing-box     Only pull sing-box
+    --cronet-go    Only pull cronet-go
+
 Build options:
     --sing-box <path>    Path to sing-box (default: $SING_BOX_DEFAULT)
     --cronet-go <path>   Path to cronet-go (default: $CRONET_GO_DEFAULT)
-    --toolchain <path>  Path to toolchain (default: $TOOLCHAIN_DEFAULT)
-    --output <path>     Output directory (default: $OUTPUT_DEFAULT)
+    --toolchain <path>   Path to toolchain (default: $TOOLCHAIN_DEFAULT)
+    --output <path>      Output directory (default: $OUTPUT_DEFAULT)
+    --no-pull            Skip pulling latest version
 
 Examples:
     $(basename "$0") clone sing-box
     $(basename "$0") clone cronet-go
     $(basename "$0") clone toolchain
+    $(basename "$0") pull
+    $(basename "$0") pull sing-box
+    $(basename "$0") pull cronet-go
     $(basename "$0") build --arch arm64
-    $(basename "$0") build --arch amd64
+    $(basename "$0") build --arch amd64 --no-pull
 EOF
 }
 
@@ -68,6 +78,48 @@ parse_cronet_version() {
         exit 1
     fi
     cat "$cronet_version_file"
+}
+
+update_sing_box() {
+    local path="$1"
+    local target_version="$2"
+
+    cd "$path" || return 1
+
+    local current_ref
+    current_ref=$(git describe --tags --exact-match 2>/dev/null || git rev-parse --abbrev-ref HEAD)
+    current_ref=${current_ref#v}
+
+    if [[ "$current_ref" != "$target_version" ]]; then
+        echo "Updating sing-box to v$target_version..."
+        git fetch --tags origin
+        git checkout "v$target_version" 2>/dev/null || git checkout "$target_version"
+    else
+        echo "sing-box already at v$target_version"
+    fi
+
+    cd - > /dev/null
+}
+
+update_cronet_go() {
+    local path="$1"
+    local target_version="$2"
+
+    cd "$path" || return 1
+
+    local current_commit
+    current_commit=$(git rev-parse HEAD 2>/dev/null)
+
+    if [[ "$current_commit" != "$target_version" ]]; then
+        echo "Updating cronet-go to $target_version..."
+        git fetch --depth=1 origin "$target_version"
+        git checkout FETCH_HEAD
+        git submodule update --init --recursive
+    else
+        echo "cronet-go already at $target_version"
+    fi
+
+    cd - > /dev/null
 }
 
 cmd_clone_sing_box() {
@@ -177,12 +229,66 @@ cmd_clone_toolchain() {
     echo "Done."
 }
 
+cmd_pull() {
+    local sing_box_path="$SING_BOX_DEFAULT"
+    local cronet_go_path="$CRONET_GO_DEFAULT"
+    local target="all"
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --sing-box|sing-box)
+                target="sing-box"
+                shift
+                ;;
+            --cronet-go|cronet-go)
+                target="cronet-go"
+                shift
+                ;;
+            --all|all)
+                target="all"
+                shift
+                ;;
+            *)
+                echo "Unknown option: $1"
+                show_help
+                exit 1
+                ;;
+        esac
+    done
+
+    local version
+    version=$(parse_version "$(pwd)")
+    version="${version#v}"
+
+    if [[ "$target" == "all" || "$target" == "sing-box" ]]; then
+        if [[ -d "$sing_box_path" ]]; then
+            update_sing_box "$sing_box_path" "$version"
+        else
+            echo "sing-box not found at $sing_box_path"
+            cmd_clone_sing_box
+        fi
+    fi
+
+    if [[ "$target" == "all" || "$target" == "cronet-go" ]]; then
+        local cronet_version
+        cronet_version=$(parse_cronet_version "$sing_box_path")
+
+        if [[ -d "$cronet_go_path" ]]; then
+            update_cronet_go "$cronet_go_path" "$cronet_version"
+        else
+            echo "cronet-go not found at $cronet_go_path"
+            cmd_clone_cronet_go
+        fi
+    fi
+}
+
 cmd_build() {
     local arch=""
     local sing_box_path="$SING_BOX_DEFAULT"
     local cronet_go_path="$CRONET_GO_DEFAULT"
     local toolchain_path="$TOOLCHAIN_DEFAULT"
     local output_path="$OUTPUT_DEFAULT"
+    local no_pull=0
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -205,6 +311,14 @@ cmd_build() {
             --output)
                 output_path="$2"
                 shift 2
+                ;;
+            --no-pull)
+                no_pull=1
+                shift
+                ;;
+            -h|--help)
+                show_help
+                exit 0
                 ;;
             *)
                 echo "Unknown option: $1"
@@ -242,6 +356,18 @@ cmd_build() {
     if [[ ! -d "$sing_box_path" ]]; then
         echo "sing-box not found at $sing_box_path, cloning..."
         cmd_clone_sing_box
+    fi
+
+    if [[ $no_pull -eq 0 ]]; then
+        if [[ -d "$sing_box_path" ]]; then
+            update_sing_box "$sing_box_path" "$version"
+            local cronet_version
+            cronet_version=$(parse_cronet_version "$sing_box_path")
+
+            if [[ -d "$cronet_go_path" ]]; then
+                update_cronet_go "$cronet_go_path" "$cronet_version"
+            fi
+        fi
     fi
 
     if [[ ! -d "$cronet_go_path" ]]; then
@@ -389,6 +515,10 @@ main() {
                     exit 1
                     ;;
             esac
+            ;;
+        pull)
+            shift
+            cmd_pull "$@"
             ;;
         build)
             shift
