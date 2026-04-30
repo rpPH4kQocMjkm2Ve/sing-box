@@ -1,13 +1,13 @@
 # sing-box container image
 
-[![Build](https://github.com/rpPH4kQocMjkm2Ve/sing-box/actions/workflows/build.yml/badge.svg)](https://github.com/rpPH4kQocMjkm2Ve/sing-box/actions/workflows/build.yml)
+[![Build](https://github.com/fkzys/sing-box/actions/workflows/build.yml/badge.svg)](https://github.com/fkzys/sing-box/actions/workflows/build.yml)
 ![Version](https://img.shields.io/badge/version-1.13.9-blue)
 ![Platform](https://img.shields.io/badge/platform-linux%2Famd64%2Clinux%2Farm64-lightgrey)
-![License](https://img.shields.io/github/license/rpPH4kQocMjkm2Ve/sing-box)
+![License](https://img.shields.io/github/license/fkzys/sing-box)
 
 OCI image build of [sing-box](https://github.com/SagerNet/sing-box) with a curated set of build tags, published to GitHub Container Registry.
 
-The resulting image is consumed by the infrastructure repository [fkzys/infra](https://gitlab.com/fkzys/infra).
+The resulting image is consumed by the infrastructure repository [fkzys/infra](https://github.com/fkzys/infra).
 
 ## Image
 
